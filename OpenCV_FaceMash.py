@@ -85,7 +85,7 @@ with mp_face_mesh.FaceMesh(
         right_iris = [face_landmarks.landmark[i] for i in range(469, 473)]
 
         LEFT_EYE_Points =[ 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385,384, 398 ]
-        RIGHT_EYE_Points=[ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161 , 246 ] 
+        RIGHT_EYE_Points=[ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161 , 246 ] #x:246 [15]/173 [9] y:  159 [12]/ 145 [4]
         left_eye = [face_landmarks.landmark[i] for i in LEFT_EYE_Points]#range(370,385)]#range(33, 133)]
         right_eye = [face_landmarks.landmark[i] for i in RIGHT_EYE_Points]#range(144,161)]#range(362, 463)]
 
@@ -107,15 +107,16 @@ with mp_face_mesh.FaceMesh(
 
 
         #print('-----------------------------------------------------------------------------------------------')
-        #print(left_iris)
-      # Draw iris landmarks
-      for landmark in left_iris + right_iris:
-        try:
-          x = int(landmark.x * image.shape[1])
-          y = int(landmark.y * image.shape[0])
-          cv2.circle(image, (x, y), 2, (0, 255, 0), -1)
-        except:
-          pass
+      
+      
+      # Draw iris landmarks - was for testing
+#      for landmark in left_iris + right_iris:
+#        try:
+#          x = int(landmark.x * image.shape[1])
+#          y = int(landmark.y * image.shape[0])
+#          cv2.circle(image, (x, y), 2, (0, 255, 0), -1)
+#        except:
+#          pass
       for landmark in right_eye + left_eye: 
         try:
           x = int(landmark.x * image.shape[1])
@@ -124,9 +125,34 @@ with mp_face_mesh.FaceMesh(
         except:
           pass
 
-            
+      #center of right iris # [0] right; [1] up ;[2] left; [3] down
+      right_iris_center_x = (right_iris[0].x + right_iris[2].x)/2
+      right_iris_center_y = (right_iris[3].y + right_iris[1].y)/2
+    
+      cv2.circle(image, (int(right_iris_center_x * image.shape[1]), int(right_iris_center_y * image.shape[0])), 2, (0, 255, 0), -1)      
 
- 
+      #center of left iris # [0] right; [1] up ;[2] left; [3] down
+      left_iris_center_x = (left_iris[0].x + left_iris[2].x)/2
+      left_iris_center_y = (left_iris[3].y + left_iris[1].y)/2
+      cv2.circle(image, (int(left_iris_center_x * image.shape[1]), int(left_iris_center_y * image.shape[0])), 2, (0, 255, 0), -1)  
+
+      #center of right eye
+      right_eye_center_x = (right_eye[9].x + right_eye[15].x)/2 # x: 246 [15]/173 [9]
+      right_eye_center_y = (right_eye[4].y + right_eye[12].y)/2 # y: 159 [12]/145 [4]
+      cv2.circle(image, (int(right_eye_center_x * image.shape[1]), int(right_eye_center_y * image.shape[0])), 2, (0, 0, 255), -1)
+
+      #detect for mouse control
+      right_eye_correction = 0.30
+      right_eye_width = abs ((right_eye[9].x - right_eye[15].x) * right_eye_correction)
+      right_eye_distance = abs(right_iris_center_x - right_eye_center_x)
+
+      temp = right_eye_width / (2 * 3) # 2 = half of eye; 3 = 3 parts of eye
+      if temp > right_eye_distance:
+        print('idle')
+      elif temp * 2 > right_eye_distance:
+        print('Speed I - slow')
+      else:
+        print('Speed II fast')
 
       '''image = cv2.flip(image,1)
       cv2.putText(image, str(left_iris), (200,200), cv2.FONT_HERSHEY_COMPLEX, 1, 50, 2, cv2.LINE_AA, False)
