@@ -1,6 +1,8 @@
 #https://github.com/google-ai-edge/mediapipe/blob/master/docs/solutions/face_mesh.md
 import cv2
 import mediapipe as mp
+import math
+import time
 from pynput.mouse import Button, Controller
 mp_drawing = mp.solutions.drawing_utils
 mp_drawing_styles = mp.solutions.drawing_styles
@@ -10,6 +12,9 @@ mp_face_mesh = mp.solutions.face_mesh
 mouse = Controller()
 kalibraceX = 0
 kalibraceY = 0
+
+startTimeClick = time.time()
+click = False
 
 # For static images:
 IMAGE_FILES = []
@@ -95,22 +100,8 @@ with mp_face_mesh.FaceMesh(
         left_eye = [face_landmarks.landmark[i] for i in LEFT_EYE_Points]#range(370,385)]#range(33, 133)]
         right_eye = [face_landmarks.landmark[i] for i in RIGHT_EYE_Points]#range(144,161)]#range(362, 463)]
 
-        L_Max_Left = left_eye[0].x
-        L_Max_Right = left_eye[0].x
-        L_Max_Up = left_eye[0].y
-        L_Max_Down = left_eye[0].y
-
-        for point in left_eye:
-          if point.x <L_Max_Left:
-            L_Max_Left = point.x
-          if point.x >L_Max_Right:
-            L_Max_Right = point.x
-          if point.y <L_Max_Up:
-            L_Max_Up = point.y
-          if point.y >L_Max_Down:
-            L_Max_Down = point.y
-          pass
-
+        right_eyeLid = [face_landmarks.landmark[i] for i in [145, 159]]
+        right_eyeHighPoints = [face_landmarks.landmark[i] for i in [23, 28]]
 
         #print('-----------------------------------------------------------------------------------------------')
       
@@ -182,6 +173,20 @@ with mp_face_mesh.FaceMesh(
       right_eye_y_correction = 0.20
       right_eye_height =  ((right_eye[4].y - right_eye[12].y) * right_eye_y_correction)
       right_eye_y_distance = (right_iris_center_y - right_eye_center_y) - kalibraceY
+
+      right_eye_distance = math.hypot((right_eyeHighPoints[0].x - right_eyeHighPoints[1].x), (right_eyeHighPoints[0].y - right_eyeHighPoints[1].y))
+      right_eyeLid_distance = math.hypot((right_eyeLid[0].x - right_eyeLid[1].x), (right_eyeLid[0].y - right_eyeLid[1].y))
+      
+      printClick = "{:.3f}".format(right_eye_distance) + " - " + "{:.3f}".format(right_eyeLid_distance) #"None"
+      if right_eyeLid_distance < (right_eye_distance *0.3):
+        printClick = "Clicked"
+        if (time.time() - startTimeClick) >= 3: 
+          click = True
+          printClick = "Clicked > 3s"
+      else:
+        click = False
+        startTimeClick = time.time()
+      
       
       temp = right_eye_width / (2 * 3) # 2 = half of eye; 3 = 3 parts of eye
       if temp > abs(right_eye_y_distance):
@@ -208,6 +213,7 @@ with mp_face_mesh.FaceMesh(
       image = cv2.flip(image, 1)
       cv2.putText(image, printTextX, (10,20), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 128), 2,cv2.LINE_AA,False)
       cv2.putText(image, printTextY, (10,45), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 128), 2,cv2.LINE_AA,False)
+      cv2.putText(image, printClick, (10,70), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 128), 2,cv2.LINE_AA,False)
       image = cv2.flip(image, 1)
 
       mouse.move(MouseMoveX, MouseMoveY)
