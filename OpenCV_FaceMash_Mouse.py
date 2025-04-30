@@ -10,6 +10,7 @@ mp_face_mesh = mp.solutions.face_mesh
 
 # Create a mouse controller object
 mouse = Controller()
+
 kalibraceX = 0
 kalibraceY = 0
 
@@ -180,9 +181,13 @@ with mp_face_mesh.FaceMesh(
       printClick = "{:.3f}".format(right_eye_distance) + " - " + "{:.3f}".format(right_eyeLid_distance) #"None"
       if right_eyeLid_distance < (right_eye_distance *0.3):
         printClick = "Clicked"
-        if (time.time() - startTimeClick) >= 3: 
-          click = True
+        click = True
+        if (time.time() - startTimeClick) >= 1.5: 
+          
+          startTimeClick = time.time()
+          mouse.press(Button.left)
           printClick = "Clicked > 3s"
+          
       else:
         click = False
         startTimeClick = time.time()
@@ -216,7 +221,8 @@ with mp_face_mesh.FaceMesh(
       cv2.putText(image, printClick, (10,70), cv2.FONT_HERSHEY_COMPLEX, 0.5, (255, 0, 128), 2,cv2.LINE_AA,False)
       image = cv2.flip(image, 1)
 
-      mouse.move(MouseMoveX, MouseMoveY)
+      if not click:
+        mouse.move(MouseMoveX, MouseMoveY)
 
       '''image = cv2.flip(image,1)
       cv2.putText(image, str(left_iris), (200,200), cv2.FONT_HERSHEY_COMPLEX, 1, 50, 2, cv2.LINE_AA, False)
